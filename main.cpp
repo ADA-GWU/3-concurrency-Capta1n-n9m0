@@ -1,117 +1,73 @@
 #include <iostream>
-#include <SDL.h>
-#include <opencv2/opencv.hpp>
+#include <string>
+#include <tuple>
+#include "omp.h"
+#include "App.h"
+#include "opencv2/opencv.hpp"
 
+
+std::tuple<cv::Mat, int, char> process_arguments(int argc, char* argv[]);
 
 int main(int argc, char* argv[]) {
-  if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " <image_file>" << std::endl;
+  cv::Mat image;
+  int kernel_size;
+  char execution_mode;
+  std::tie(image, kernel_size, execution_mode) = process_arguments(argc, argv);
+
+  App* app = App::GetInstance("Image Convolution", 640, 480);
+  if(!app->Init()) {
+    std::cerr << "Could not initialize application!" << std::endl;
     return 1;
   }
 
-  // Initialize SDL
-  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-    std::cerr << "SDL could not be initialized! SDL_Error: " << SDL_GetError() << std::endl;
-    return 1;
-  }
 
-  // Create an SDL window
-  SDL_Window* window = SDL_CreateWindow("OpenCV and SDL2 Image Display",
-                                        SDL_WINDOWPOS_UNDEFINED,
-                                        SDL_WINDOWPOS_UNDEFINED,
-                                        640, 480, SDL_WINDOW_SHOWN);
-  if (window == nullptr) {
-    std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
-    return 1;
-  }
-
-  // Create an SDL renderer
-  SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-  if (renderer == nullptr) {
-    std::cerr << "Renderer could not be created! SDL_Error: " << SDL_GetError() << std::endl;
-    return 1;
-  }
-
-  // Fill the background with white (255, 255, 255)
-  SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
-  SDL_RenderClear(renderer);
-
-  // Load and display the image specified in the command-line argument using OpenCV
-  cv::Mat image = cv::imread(argv[1], cv::IMREAD_UNCHANGED);
-  if (image.empty()) {
-    std::cerr << "Could not open or find the image!" << std::endl;
-    return 1;
-  }
-
-  if(image.channels() == 3) {
-    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
-  } else if (image.channels() == 4) {
-    cv::cvtColor(image, image, cv::COLOR_BGRA2RGBA);
-  } else {
-    std::cerr << "Image has unsupported number of channels!" << std::endl;
-    return 1;
-  }
-
-  Uint32 rmask, gmask, bmask, amask;
-  #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-    rmask = 0xff000000;
-    gmask = 0x00ff0000;
-    bmask = 0x0000ff00;
-    amask = (image.channels() == 4) ? 0x000000ff : 0;
-  #else
-    rmask = 0x000000ff;
-    gmask = 0x0000ff00;
-    bmask = 0x00ff0000;
-    amask = (image.channels() == 4) ? 0xff000000 : 0;
-  #endif
-  // Create an SDL surface from the OpenCV image
-  SDL_Surface* sdlSurface = SDL_CreateRGBSurfaceFrom(
-      (void*)image.data,
-      image.cols,
-      image.rows,
-      image.channels() * 8,
-      image.step[0],
-      rmask, gmask, bmask, amask
-  );
-
-  if (sdlSurface == nullptr) {
-    std::cerr << "Failed to create SDL surface! SDL_Error: " << SDL_GetError() << std::endl;
-    return 1;
-  }
-
-  // Create an SDL texture from the SDL surface
-  SDL_Texture* sdlTexture = SDL_CreateTextureFromSurface(renderer, sdlSurface);
-  if (sdlTexture == nullptr) {
-    std::cerr << "Failed to create SDL texture! SDL_Error: " << SDL_GetError() << std::endl;
-    return 1;
-  }
-
-  // Copy the texture to the renderer
-  SDL_RenderCopy(renderer, sdlTexture, NULL, NULL);
-
-  // Update the renderer
-  SDL_RenderPresent(renderer);
-
-  // Wait for a key press or window close event
-  bool quit = false;
-  SDL_Event e;
-  while (!quit) {
-    while (SDL_PollEvent(&e) != 0) {
-      if (e.type == SDL_QUIT) {
-        quit = true;
-      }
-      if (e.type == SDL_KEYDOWN) {
-        quit = true;
-      }
+#pragma omp parallel sections shared(app, image, kernel_size, execution_mode) default(none)
+  {
+#pragma omp section
+    {
+      app->Loop();
+    }
+#pragma omp section
+    {
+      /*
+       * This section should be responsible for the image processing.
+       * It should be able to receive the image from the main thread and process it.
+       * Idea is to run one or several convolutions or "convolutors" that would emmit and SDL event to signal
+       * rerendering
+       */
     }
   }
 
-  // Cleanup and exit
-  SDL_DestroyTexture(sdlTexture);
-  SDL_FreeSurface(sdlSurface);
-  SDL_DestroyRenderer(renderer);
-  SDL_DestroyWindow(window);
-  SDL_Quit();
 
   return 0;
+}
+
+
+std::tuple<cv::Mat, int, char> process_arguments(int argc, char* argv[]) {
+  if(argc < 4) {
+    std::cerr << "Usage: " << argv[0] << " <input_image> <kernel_size> <execution_mode(S|M)>" << std::endl;
+    exit(1);
+  }
+  char *input_image = argv[1];
+  cv::Mat image;
+  try{
+    image = cv::imread(input_image, cv::IMREAD_UNCHANGED);
+  } catch(cv::Exception& e) {
+    std::cerr << "Could not read image!" << std::endl;
+    exit(1);
+  }
+  std::string kernel_size_str = std::string(argv[2]);
+  int kernel_size;
+  try{
+    kernel_size = std::stoi(kernel_size_str);
+  } catch(std::invalid_argument& e) {
+    std::cerr << "Invalid kernel size!" << std::endl;
+    exit(1);
+  }
+  char execution_mode = argv[3][0];
+  if(execution_mode != 'S' && execution_mode != 'M') {
+    std::cerr << "Invalid execution mode!" << std::endl;
+    exit(1);
+  }
+  return std::make_tuple(image, kernel_size, execution_mode);
 }
