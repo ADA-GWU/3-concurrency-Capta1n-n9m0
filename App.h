@@ -6,6 +6,7 @@
 #include <string>
 #include <SDL.h>
 #include <opencv2/opencv.hpp>
+#include <vector>
 
 class App {
 private:
@@ -18,6 +19,9 @@ protected:
   int height_;
   SDL_Window* window_;
   SDL_Renderer* renderer_;
+  cv::Mat image;
+  std::vector<SDL_Texture *> regions;
+
 
 public:
   bool running;
@@ -33,11 +37,11 @@ public:
   static App *GetInstance(const std::string& title, int width, int height);
 
 public:
-  bool Init();
+  bool Init(cv::Mat& _image);
   bool Quit();
   void OnEvent(SDL_Event* event);
   void OnResize(int width, int height);
-  void OnRender(cv::Mat& image);
+  void OnRender(int x, int y, int w, int h);
   void Loop();
 };
 

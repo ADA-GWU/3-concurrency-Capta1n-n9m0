@@ -4,18 +4,22 @@
 #include "omp.h"
 #include "App.h"
 #include "opencv2/opencv.hpp"
+#include <vector>
 
 
-std::tuple<cv::Mat, int, char> process_arguments(int argc, char* argv[]);
+std::tuple<cv::Mat, int, char, SDL_Color> process_arguments(int argc, char* argv[]);
 
 int main(int argc, char* argv[]) {
   cv::Mat image;
   int kernel_size;
   char execution_mode;
-  std::tie(image, kernel_size, execution_mode) = process_arguments(argc, argv);
+  SDL_Color color;
+  std::tie(image, kernel_size, execution_mode, color) = process_arguments(argc, argv);
+
+
 
   App* app = App::GetInstance("Image Convolution", 640, 480);
-  if(!app->Init()) {
+  if(!app->Init(image)) {
     std::cerr << "Could not initialize application!" << std::endl;
     return 1;
   }
@@ -43,9 +47,9 @@ int main(int argc, char* argv[]) {
 }
 
 
-std::tuple<cv::Mat, int, char> process_arguments(int argc, char* argv[]) {
+std::tuple<cv::Mat, int, char, SDL_Color> process_arguments(int argc, char* argv[]) {
   if(argc < 4) {
-    std::cerr << "Usage: " << argv[0] << " <input_image> <kernel_size> <execution_mode(S|M)>" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <input_image> <kernel_size> <execution_mode(S|M)> <color(RGB)>" << std::endl;
     exit(1);
   }
   char *input_image = argv[1];
@@ -69,5 +73,26 @@ std::tuple<cv::Mat, int, char> process_arguments(int argc, char* argv[]) {
     std::cerr << "Invalid execution mode!" << std::endl;
     exit(1);
   }
-  return std::make_tuple(image, kernel_size, execution_mode);
+  SDL_Color color;
+  if(argc > 4) {
+    std::string color_str = std::string(argv[4]);
+    if(color_str.length() != 6) {
+      std::cerr << "Invalid color!" << std::endl;
+      exit(1);
+    }
+    try{
+      color.r = std::stoi(color_str.substr(0, 2), nullptr, 16);
+      color.g = std::stoi(color_str.substr(2, 2), nullptr, 16);
+      color.b = std::stoi(color_str.substr(4, 2), nullptr, 16);
+    } catch(std::invalid_argument& e) {
+      std::cerr << "Invalid color!" << std::endl;
+      exit(1);
+    }
+  } else {
+    color.r = 250;
+    color.g = 250;
+    color.b = 250;
+  }
+  color.a = 255;
+  return std::make_tuple(image, kernel_size, execution_mode, color);
 }

@@ -22,7 +22,8 @@ App *App::GetInstance(const std::string& title, int width, int height) {
   return instance_;
 }
 
-bool App::Init() {
+bool App::Init(cv::Mat& _image) {
+  image = _image;
   if(running) {
     return false;
   }
@@ -31,10 +32,13 @@ bool App::Init() {
     return false;
   }
 
+  auto window_flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_FULLSCREEN_DESKTOP;
   window_ = SDL_CreateWindow(title_.c_str(),
                              SDL_WINDOWPOS_CENTERED_DISPLAY(1),
                              SDL_WINDOWPOS_CENTERED_DISPLAY(1),
-                             width_, height_, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+                             width_, height_, window_flags);
+  SDL_GetWindowSize(window_, &width_, &height_);
+
   if (window_ == nullptr) {
     std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
     return false;
@@ -83,7 +87,10 @@ void App::OnResize(int width, int height) {
   height_ = height;
 }
 
-void App::OnRender(cv::Mat& image) {
+void App::OnRender(int x, int y, int w, int h){
+}
+
+void ren(cv::Mat& image) {
   cv::Mat image_copy = image.clone();
 
   if(image.channels() == 3) {
