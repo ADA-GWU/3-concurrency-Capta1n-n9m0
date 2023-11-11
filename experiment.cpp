@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
   omp_set_nested(1);
   SDL_Color bgColor = {250, 250, 250, 255};
   int kernel_size = 100;
-  cv::Mat image = cv::imread("../input/Mona Lisa.jpg", cv::IMREAD_UNCHANGED);
+  cv::Mat image = cv::imread("../input/Diamond.png", cv::IMREAD_UNCHANGED);
 
   if(image.channels() == 3){
     cv::cvtColor(image, image, cv::COLOR_BGR2RGBA);
@@ -88,6 +88,7 @@ int main(int argc, char* argv[]) {
                                            SDL_PixelFormatEnum::SDL_PIXELFORMAT_RGBA32,
                                            SDL_TextureAccess::SDL_TEXTUREACCESS_STREAMING,
                                            image.cols, image.rows);
+  SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
   if (texture == nullptr) {
     std::cerr << "Texture could not be created! SDL_Error: " << SDL_GetError() << std::endl;
     return 1;
@@ -153,7 +154,7 @@ int main(int argc, char* argv[]) {
       processImage(image, kernel_size);
       cv::Mat image_copy = image.clone();
       cv::cvtColor(image_copy, image_copy, cv::COLOR_RGBA2BGRA);
-      cv::imwrite("../output/Mona Lisa.jpg", image_copy);
+      cv::imwrite("../output/Diamond.png", image_copy);
     }
   }
 
