@@ -20,16 +20,20 @@
 const int IMAGE_CHANGE_DELAY = 500;
 
 bool running = true;
+int num_threads = 0;
 
 void processImage(cv::Mat& image, int kernel_size) {
-#pragma omp parallel for shared(image, kernel_size, std::cout, std::cerr, running) default(none) schedule(dynamic) collapse(2)
+  omp_set_num_threads(num_threads);
+  #pragma omp parallel for shared(image, kernel_size, std::cout, std::cerr, running) default(none) schedule(dynamic) collapse(2)
   for(int i = 0; i < image.rows; i += kernel_size) {
     for(int j = 0; j < image.cols; j += kernel_size) {
       if(!running) continue;
+      #pragma omp critical
+      std::cout << "Thread " << omp_get_thread_num() << " is processing region (" << i << ", " << j << ")" << std::endl;
       SLEEP(100);
       cv::Rect area = cv::Rect(j, i, std::min(kernel_size, image.cols - j),
                                std::min(kernel_size, image.rows - i));
-#pragma omp critical
+      #pragma omp critical
       {
         cv::Mat region = image(area);
         region = cv::mean(region);
@@ -42,9 +46,11 @@ void processImage(cv::Mat& image, int kernel_size) {
 
 int main(int argc, char* argv[]) {
   omp_set_nested(1);
+  num_threads = omp_get_max_threads();
+  omp_set_num_threads(2);
   SDL_Color bgColor = {250, 250, 250, 255};
   int kernel_size = 100;
-  cv::Mat image = cv::imread("../input/Diamond.png", cv::IMREAD_UNCHANGED);
+  cv::Mat image = cv::imread("../input/Mona Lisa.jpg", cv::IMREAD_UNCHANGED);
 
   if(image.channels() == 3){
     cv::cvtColor(image, image, cv::COLOR_BGR2RGBA);
@@ -100,10 +106,12 @@ int main(int argc, char* argv[]) {
   SDL_RenderCopy(renderer, texture, NULL, &dRect);
   SDL_RenderPresent(renderer);
 
-#pragma omp parallel shared(renderer, texture, kernel_size, width, height, image, std::cout, std::cerr, scale, dRect, running) default(none)
+  #pragma omp parallel shared(renderer, texture, kernel_size, width, height, image, std::cout, std::cerr, scale, dRect, running) default(none)
   {
-#pragma omp master
+    #pragma omp master
     {
+      #pragma omp critical
+      std::cout << "Master thread is running on thread " << omp_get_thread_num() << std::endl;
       SDL_Event event;
       unsigned int startTicks = SDL_GetTicks();
       running = true;
@@ -120,7 +128,7 @@ int main(int argc, char* argv[]) {
               break;
             case SDL_WINDOWEVENT:
               if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-#pragma omp critical
+                #pragma omp critical
                 {
                   width = event.window.data1;
                   height = event.window.data2;
@@ -140,7 +148,7 @@ int main(int argc, char* argv[]) {
         }
           unsigned int currentTicks = SDL_GetTicks();
         if (currentTicks - startTicks > IMAGE_CHANGE_DELAY) {
-#pragma omp critical
+          #pragma omp critical
           SDL_UpdateTexture(texture, NULL, image.data, image.step);
           SDL_RenderClear(renderer);
           SDL_RenderCopy(renderer, texture, NULL, &dRect);
@@ -149,8 +157,10 @@ int main(int argc, char* argv[]) {
         }
       }
     }
-#pragma omp single
+    #pragma omp single
     {
+      #pragma omp critical
+      std::cout << "Single thread is running on thread " << omp_get_thread_num() << std::endl;
       processImage(image, kernel_size);
       cv::Mat image_copy = image.clone();
       cv::cvtColor(image_copy, image_copy, cv::COLOR_RGBA2BGRA);
