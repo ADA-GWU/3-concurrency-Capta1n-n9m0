@@ -23,7 +23,7 @@ bool running = true;
 int num_threads = 0;
 
 void processImage(cv::Mat& image, int kernel_size) {
-  omp_set_num_threads(num_threads);
+  omp_set_num_threads(1);
   #pragma omp parallel for shared(image, kernel_size, std::cout, std::cerr, running) default(none) schedule(dynamic) collapse(2)
   for(int i = 0; i < image.rows; i += kernel_size) {
     for(int j = 0; j < image.cols; j += kernel_size) {
@@ -48,9 +48,9 @@ int main(int argc, char* argv[]) {
   omp_set_nested(1);
   num_threads = omp_get_max_threads();
   omp_set_num_threads(2);
-  SDL_Color bgColor = {250, 250, 250, 255};
+  SDL_Color bgColor = {74, 74, 255, 255};
   int kernel_size = 100;
-  cv::Mat image = cv::imread("../input/Mona Lisa.jpg", cv::IMREAD_UNCHANGED);
+  cv::Mat image = cv::imread("../input/Diamond.png", cv::IMREAD_UNCHANGED);
 
   if(image.channels() == 3){
     cv::cvtColor(image, image, cv::COLOR_BGR2RGBA);
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
   double y_scale = (double)height / image_size.height;
   double scale = x_scale < y_scale ? x_scale : y_scale;
 
-  auto window_flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
+  auto window_flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
   SDL_Window* window = SDL_CreateWindow("Image Convolution",SDL_WINDOWPOS_CENTERED_DISPLAY(1),SDL_WINDOWPOS_CENTERED_DISPLAY(1),width, height, window_flags);
   if (window == nullptr) {
     std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
@@ -147,14 +147,12 @@ int main(int argc, char* argv[]) {
           }
         }
           unsigned int currentTicks = SDL_GetTicks();
-        if (currentTicks - startTicks > IMAGE_CHANGE_DELAY) {
-          #pragma omp critical
-          SDL_UpdateTexture(texture, NULL, image.data, image.step);
-          SDL_RenderClear(renderer);
-          SDL_RenderCopy(renderer, texture, NULL, &dRect);
-          SDL_RenderPresent(renderer);
-          startTicks = currentTicks;
-        }
+        #pragma omp critical
+        SDL_UpdateTexture(texture, NULL, image.data, image.step);
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, texture, NULL, &dRect);
+        SDL_RenderPresent(renderer);
+        startTicks = currentTicks;
       }
     }
     #pragma omp single

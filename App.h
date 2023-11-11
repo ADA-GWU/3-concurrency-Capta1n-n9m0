@@ -10,38 +10,48 @@
 
 class App {
 private:
-  static App *instance_;
-  static std::mutex mutex_;
+  static App *instance;
+  static std::mutex mutex;
 
 protected:
-  std::string title_;
-  int width_;
-  int height_;
-  SDL_Window* window_;
-  SDL_Renderer* renderer_;
-  cv::Mat image;
-  std::vector<SDL_Texture *> regions;
+  std::string title;
+  int width;
+  int height;
+  SDL_Window* window = nullptr;
+  SDL_Renderer* renderer = nullptr;
+  SDL_Texture* texture = nullptr;
+  cv::Mat image = cv::Mat();
+  SDL_Color bgColor = {0, 0, 0, 255};
+  unsigned int lastRenderTicks = 0;
+  unsigned int renderDelay = 0;
+  double scale = 1.0;
+  SDL_Rect dRect = {0, 0, 0, 0};
 
 
 public:
   bool running;
 
 protected:
-  App(const std::string& title, int width, int height);
+  App(const std::string& _title, int _width, int _height);
   ~App()= default;
 
 public:
   App(const App&) = delete;
   void operator=(const App&) = delete;
 
-  static App *GetInstance(const std::string& title, int width, int height);
+  static App *GetInstance();
+  static App *GetInstance(const std::string& title_, int width_, int height_);
 
 public:
-  bool Init(cv::Mat& _image);
+  void setImage(cv::Mat& _image);
+  void setBgColor(SDL_Color& _bgColor);
+  void setRenderDelay(unsigned int _renderDelay);
+  bool Init();
   bool Quit();
   void OnEvent(SDL_Event* event);
+  void OnKeyDown(SDL_Keycode sym);
   void OnResize(int width, int height);
-  void OnRender(int x, int y, int w, int h);
+  void OnRender();
   void Loop();
 };
 
