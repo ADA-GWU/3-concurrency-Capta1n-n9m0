@@ -67,6 +67,7 @@ std::tuple<cv::Mat, int, char, SDL_Color> process_arguments(int argc, char* argv
     std::cerr << "Usage: " << argv[0] << " <input_image> <kernel_size> <execution_mode(S|M)> <color(RGB)>" << std::endl;
     exit(1);
   }
+
   char *input_image = argv[1];
   cv::Mat image;
   try{
@@ -75,6 +76,7 @@ std::tuple<cv::Mat, int, char, SDL_Color> process_arguments(int argc, char* argv
     std::cerr << "Could not read image!" << std::endl;
     exit(1);
   }
+
   std::string kernel_size_str = std::string(argv[2]);
   int kernel_size;
   try{
@@ -83,12 +85,14 @@ std::tuple<cv::Mat, int, char, SDL_Color> process_arguments(int argc, char* argv
     std::cerr << "Invalid kernel size!" << std::endl;
     exit(1);
   }
+
   char execution_mode = argv[3][0];
   if(execution_mode != 'S' && execution_mode != 'M') {
     std::cerr << "Invalid execution mode!" << std::endl;
     exit(1);
   }
-  SDL_Color color;
+
+  SDL_Color color = {250, 250, 250, 255};
   if(argc > 4) {
     std::string color_str = std::string(argv[4]);
     if(color_str.length() != 6) {
@@ -103,12 +107,8 @@ std::tuple<cv::Mat, int, char, SDL_Color> process_arguments(int argc, char* argv
       std::cerr << "Invalid color!" << std::endl;
       exit(1);
     }
-  } else {
-    color.r = 250;
-    color.g = 250;
-    color.b = 250;
   }
-  color.a = 255;
+
   return std::make_tuple(image, kernel_size, execution_mode, color);
 }
 
@@ -130,6 +130,7 @@ void processImage(cv::Mat& image, int kernel_size, char execution_mode) {
     for(int i = 0; i < image.rows; i += kernel_size) {
       for(int j = 0; j < image.cols; j += kernel_size) {
         if(!app->running) continue;
+        SLEEP(100);
         cv::Rect area = cv::Rect(j, i, std::min(kernel_size, image.cols - j),
                                  std::min(kernel_size, image.rows - i));
         cv::Mat region = image(area);
