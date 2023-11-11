@@ -19,10 +19,13 @@
 
 const int IMAGE_CHANGE_DELAY = 500;
 
+bool running = true;
+
 void processImage(cv::Mat& image, int kernel_size) {
-#pragma omp parallel for shared(image, kernel_size, std::cout, std::cerr) default(none) schedule(dynamic) collapse(2) num_threads(1)
+#pragma omp parallel for shared(image, kernel_size, std::cout, std::cerr, running) default(none) schedule(dynamic) collapse(2)
   for(int i = 0; i < image.rows; i += kernel_size) {
     for(int j = 0; j < image.cols; j += kernel_size) {
+      if(!running) continue;
       SLEEP(100);
       cv::Rect area = cv::Rect(j, i, std::min(kernel_size, image.cols - j),
                                std::min(kernel_size, image.rows - i));
@@ -34,6 +37,8 @@ void processImage(cv::Mat& image, int kernel_size) {
     }
   }
 }
+
+
 
 int main(int argc, char* argv[]) {
   omp_set_nested(1);
@@ -94,13 +99,13 @@ int main(int argc, char* argv[]) {
   SDL_RenderCopy(renderer, texture, NULL, &dRect);
   SDL_RenderPresent(renderer);
 
-#pragma omp parallel sections shared(renderer, texture, kernel_size, width, height, image, std::cout, std::cerr, scale, dRect) default(none)
+#pragma omp parallel shared(renderer, texture, kernel_size, width, height, image, std::cout, std::cerr, scale, dRect, running) default(none)
   {
-#pragma omp section
+#pragma omp master
     {
       SDL_Event event;
       unsigned int startTicks = SDL_GetTicks();
-      bool running = true;
+      running = true;
       while (running) {
         while (SDL_PollEvent(&event)) {
           switch (event.type) {
@@ -143,10 +148,12 @@ int main(int argc, char* argv[]) {
         }
       }
     }
-#pragma omp section
+#pragma omp single
     {
       processImage(image, kernel_size);
-      cv::imwrite("../output/Mona Lisa.jpg", image);
+      cv::Mat image_copy = image.clone();
+      cv::cvtColor(image_copy, image_copy, cv::COLOR_RGBA2BGRA);
+      cv::imwrite("../output/Mona Lisa.jpg", image_copy);
     }
   }
 
