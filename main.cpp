@@ -20,7 +20,7 @@ void processImage(cv::Mat& image, int kernel_size, char execution_mode);
 int main(int argc, char* argv[]) {
   omp_set_nested(1);
   int num_threads = omp_get_max_threads();
-  omp_set_num_threads(std::min(2, num_threads));
+  omp_set_num_threads(std::max(2, num_threads));
 
   cv::Mat image;
   int kernel_size;
