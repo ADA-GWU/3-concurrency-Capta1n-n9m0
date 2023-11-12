@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
       processImage(image, kernel_size, execution_mode);
       cv::Mat image_copy = image.clone();
       cv::cvtColor(image_copy, image_copy, cv::COLOR_RGBA2BGRA);
-      cv::imwrite("output.jpg", image_copy);
+      cv::imwrite("result.jpg", image_copy);
       image_copy.release();
     }
   }
