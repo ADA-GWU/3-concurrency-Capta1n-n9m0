@@ -3,7 +3,7 @@ project(ada_a3_image_conv)
 
 set(CMAKE_CXX_STANDARD 20)
 
-find_package(OpenMP)
+find_package(OpenMP REQUIRED)
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
