@@ -125,6 +125,46 @@ The use of OpenMP is particularly noteworthy. Unlike STL threads, which can be c
 OpenMP offers a more straightforward approach to parallelism. It allows for easy scaling of the application 
 across multiple processors, making the application more efficient and faster in processing complex image manipulation tasks.
 
+## Implementation Details
+### Class `App`
+- __Singleton Pattern__: This class follows the singleton design pattern, ensuring that only one instance of App exists throughout the application.
+
+__Constructor__: `App(const std::string& _title, int _width, int _height)`
+- __Parameters__:
+    - `_title`: Title of the SDL window.
+    - `_width`: Width of the SDL window.
+    - `_height`: Height of the SDL window.
+- __Description__: Initializes an App instance with the specified title, width, and height.
+
+__Static Methods__:
+- `static App* GetInstance()`: Returns the singleton instance of App.
+- `static App* GetInstance(const std::string& title_, int width_, int height_)`: Returns the singleton instance of App, creating it with the specified title, width, and height if it doesn't already exist.
+
+__Instance Methods__:
+- `void setImage(cv::Mat& _image)`: Sets the image to be processed and displayed.
+- `void setBgColor(SDL_Color& _bgColor)`: Sets the background color of the SDL window.
+- `void setRenderDelay(unsigned int _renderDelay)`: Sets the delay between render frames.
+- `bool Init()`: Initializes SDL components and prepares the window and renderer.
+- `bool Quit()`: Cleans up and quits the SDL application.
+- `void OnEvent(SDL_Event* event)`: Handles SDL events.
+- `void OnKeyDown(SDL_Keycode sym)`: Handles key press events.
+- `void OnResize(int width, int height)`: Handles window resize events.
+- `void OnRender()`: Renders the current frame.
+- `void Loop()`: Runs the main loop of the application.
+
+### Function `main(int argc, char* argv[])`
+__Description__: The entry point of the application. It sets up OpenMP, processes command-line arguments, initializes the App instance, and starts the main loop.
+
+### Function `processArguments(int argc, char* argv[])`
+- __Returns__: A tuple containing the loaded image, kernel size, execution mode, and background color.
+- __Description__: Processes command-line arguments to configure the application.
+
+### Function `prepareImage(cv::Mat& image)`
+- __Description__: Prepares the image by converting its color format.
+
+### Function: `processImage(cv::Mat& image, int kernel_size, char execution_mode)`
+- __Description__: Processes the image using either single-threaded or multi-threaded execution, depending on the execution mode.
+
 ## Disclaimer
 
 The author of this project, Abbas Aliyev, provides the code and accompanying documentation on an "as-is" basis and makes no representations regarding the functionality or suitability of this project for any purpose. The author shall not be held responsible for any damage, data loss, or adverse effects resulting from the compilation or execution of this project.
