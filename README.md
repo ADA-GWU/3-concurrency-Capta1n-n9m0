@@ -22,6 +22,65 @@ To compile and run this application, you need to have the following installed:
 - OpenCV library
 - SDL2 library
 
+### macOS Prerequisites Installation
+To satisfy the prerequisite requirements for compiling and running the project on a Mac, 
+you'll need to install several tools and libraries, including CMake, a C++ compiler with C++20 support, 
+OpenMP, OpenCV, and SDL2. Here's a step-by-step guide:
+1. __Install Homebrew__.
+Homebrew is a package manager for macOS that makes it easy to install software. 
+If you don't have Homebrew installed, open the Terminal and run:
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+2. __Install CMake__.
+CMake is used for configuring and generating build files. Install it via Homebrew:
+```bash
+brew install cmake
+```
+
+3. __Install a C++ compiler__.
+macOS comes with Clang, a C++ compiler that supports C++20. You can verify its installation and version by running:
+```bash
+clang++ --version
+```
+If it's not installed or you need a different version, you can install it via Homebrew or update Xcode Command Line Tools:
+```bash
+xcode-select --install
+```
+
+4. __Install OpenMP__.
+OpenMP is used for parallel programming. Install it with Homebrew:
+```bash
+brew install libomp
+```
+
+5. __Install OpenCV__.
+OpenCV is a library for computer vision and image processing. Install it via Homebrew:
+```bash
+brew install opencv
+```
+
+6. __Install SDL2__.
+SDL2 is used for graphical output and window management. Install it with Homebrew:
+```bash
+brew install sdl2
+```
+
+7. __Set Environment Variables (if necessary)__.
+Some libraries might require setting environment variables. You can add them to your .bash_profile or .zshrc file (depending on your shell). For example:
+```bash
+export PATH="/usr/local/opt/opencv@4/bin:$PATH"
+```
+
+8. __Verify Installation__.
+Finally, verify that all installations are successful. You can do this by checking the version of each installed package (e.g., cmake --version, opencv_version, etc.).
+
+#### Additional Notes
+- Ensure that your macOS is updated to a recent version to avoid compatibility issues.
+- If you encounter any issues with library paths, you might need to adjust the CMakeLists.txt file in your project to correctly locate the installed libraries.
+Once all prerequisites are installed, you should be able to compile and run the project on your Mac. Remember, the exact commands might vary slightly depending on your system configuration and the shell you are using.
+
 ## Compilation Instructions
 
 1. Clone the repository to your local machine.
