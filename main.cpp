@@ -13,7 +13,7 @@
 #define SLEEP(x) usleep(x * 1000)
 #endif
 
-std::tuple<cv::Mat, int, char, SDL_Color> process_arguments(int argc, char* argv[]);
+std::tuple<cv::Mat, int, char, SDL_Color> processArguments(int argc, char* argv[]);
 void prepareImage(cv::Mat& image);
 void processImage(cv::Mat& image, int kernel_size, char execution_mode);
 
@@ -21,14 +21,14 @@ int main(int argc, char* argv[]) {
   omp_set_nested(1);
   int num_threads = omp_get_max_threads();
   omp_set_num_threads(std::min(2, num_threads));
+
   cv::Mat image;
   int kernel_size;
   char execution_mode;
   SDL_Color color;
-  std::tie(image, kernel_size, execution_mode, color) = process_arguments(argc, argv);
+  std::tie(image, kernel_size, execution_mode, color) = processArguments(argc, argv);
 
   prepareImage(image);
-
 
   App* app = App::GetInstance("Image Convolution", 1000, 1000);
   app->setImage(image);
@@ -52,6 +52,7 @@ int main(int argc, char* argv[]) {
       cv::Mat image_copy = image.clone();
       cv::cvtColor(image_copy, image_copy, cv::COLOR_RGBA2BGRA);
       cv::imwrite("output.png", image_copy);
+      image_copy.release();
     }
   }
 
@@ -62,7 +63,7 @@ int main(int argc, char* argv[]) {
 }
 
 
-std::tuple<cv::Mat, int, char, SDL_Color> process_arguments(int argc, char* argv[]) {
+std::tuple<cv::Mat, int, char, SDL_Color> processArguments(int argc, char* argv[]) {
   if(argc < 4) {
     std::cerr << "Usage: " << argv[0] << " <input_image> <kernel_size> <execution_mode(S|M)> <color(RGB)>" << std::endl;
     exit(1);
